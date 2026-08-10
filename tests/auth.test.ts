@@ -191,7 +191,11 @@ describe("raw better-auth sign-up gate (fresh database)", () => {
 		const res = await fresh.app.request("/api/auth/sign-up/email", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ name: "First", email: "first@example.com", password: "first-pass-123" }),
+			body: JSON.stringify({
+				name: "First",
+				email: "first@example.com",
+				password: "first-pass-123",
+			}),
 		});
 		expect(res.status).toBe(200);
 	});
@@ -200,7 +204,11 @@ describe("raw better-auth sign-up gate (fresh database)", () => {
 		const res = await fresh.app.request("/api/auth/sign-up/email", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ name: "Second", email: "second@example.com", password: "second-pass-123" }),
+			body: JSON.stringify({
+				name: "Second",
+				email: "second@example.com",
+				password: "second-pass-123",
+			}),
 		});
 		expect(res.status).toBe(404);
 	});
