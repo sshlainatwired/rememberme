@@ -1,0 +1,61 @@
+name: Semgrep SAST
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Nightly keeps the OSS ruleset fresh against drift in the codebase.
+  schedule:
+    - cron: "0 6 * * *"
+
+# Don't run two runs at once on the same ref.
+concurrency:
+  group: semgrep-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Static analysis for command-injection / SSRF / XSS / secret patterns across
+  # the Hono API and the Astro frontend. Source-level SAST only; npm + GitHub
+  # action dependency CVEs are covered by Dependabot (.github/dependabot.yml)
+  # and dep-audit.yml.
+  semgrep:
+    name: semgrep scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Need the base branch too so the PR gate can diff against it.
+          fetch-depth: 0
+      # GitHub-hosted runners ship python3 + venv; install semgrep into an
+      # isolated venv under $RUNNER_TEMP rather than touching the base image.
+      - name: install semgrep
+        run: |
+          python3 -m venv "$RUNNER_TEMP/semgrep-venv"
+          "$RUNNER_TEMP/semgrep-venv/bin/pip" install --quiet semgrep
+          echo "$RUNNER_TEMP/semgrep-venv/bin" >> "$GITHUB_PATH"
+      - # PR gate: block only on findings this PR *introduces*, diffed against
+        # the merge base. `--error` makes semgrep exit non-zero on any (new)
+        # finding, so a fresh command-injection / SSRF / XSS / secret pattern
+        # fails the check and blocks the merge — without wedging every PR on the
+        # pre-existing backlog (surfaced by the full scan below). `p/default`
+        # ships command-injection, SSRF, secret-detection and OWASP Top-10 rules.
+        if: github.event_name == 'pull_request'
+        # base_ref comes from the (untrusted) event context, so route it through
+        # env and quote it in the script rather than interpolating into the shell.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Fetch the base ref with full history (no --depth): semgrep diffs the
+          # PR against the merge base, which doesn't exist if base is shallow
+          # ("fatal: no merge base found"). checkout already used fetch-depth: 0,
+          # so this just ensures origin/$BASE_REF is present and unshallowed.
+          git fetch --no-tags origin "$BASE_REF"
+          semgrep scan --config p/default --error \
+            --baseline-commit "$(git rev-parse "origin/$BASE_REF")"
+      - # Full audit scan on main / nightly: surface the entire backlog in the
+        # run log without gating, so it stays visible and can be burned down.
+        if: github.event_name != 'pull_request'
+        run: semgrep scan --config p/default

@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Root manifest (all app + dev deps). Bun-managed; Dependabot bumps the npm
+  # manifest and CI's frozen-lockfile install catches any lockfile drift
+  # (dependabot-lockfile.yml regenerates bun.lock on Dependabot PRs).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      npm-deps:
+        patterns:
+          - "*"
+
+  # Pinned actions in .github/workflows (checkout, setup-bun, cache).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions-deps:
+        patterns:
+          - "*"

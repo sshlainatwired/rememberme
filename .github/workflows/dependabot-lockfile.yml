@@ -1,0 +1,63 @@
+name: dependabot lockfile sync
+
+# Dependabot bumps package.json but cannot update bun.lock (Bun isn't a
+# supported Dependabot package manager), so every Dependabot PR fails CI's
+# `bun install --frozen-lockfile` gate with "lockfile had changes, but lockfile
+# is frozen". This job regenerates the lockfile against the bumped manifest and
+# commits it back to the PR branch, which then satisfies the frozen-lockfile
+# gate in ci.yml / dep-audit.yml.
+#
+# Scoped to Dependabot's own PRs only: human PRs still hit the strict frozen
+# gate unchanged, so a hand-edited manifest with a stale lockfile still fails.
+
+on:
+  pull_request:
+
+concurrency:
+  group: dependabot-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+# Needs write access to push the regenerated lockfile onto the PR branch.
+permissions:
+  contents: write
+
+jobs:
+  sync-lockfile:
+    name: sync bun.lock
+    # Only Dependabot PRs, and only same-repo branches (Dependabot pushes to a
+    # branch on this repo, not a fork) so the checkout token can push back.
+    # Gate on the PR author (set by GitHub, not spoofable) rather than
+    # github.actor, which a re-run by another user would change.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Check out the PR head branch so we commit onto it, and keep the
+          # token so the follow-up push is authenticated.
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      # bun-version is omitted so setup-bun derives it from the root
+      # package.json "packageManager" field (bun@x.y.z) — the single source of
+      # truth shared with ci.yml / dep-audit.yml — avoiding version drift.
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # Regenerate (not frozen) so the lockfile picks up the bumped manifests.
+      - name: regenerate lockfile
+        run: bun install
+      - name: commit lockfile if changed
+        # head.ref is attacker-controllable (branch name), so pass it through
+        # the environment and quote it rather than interpolating into the shell.
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if git diff --quiet -- bun.lock; then
+            echo "bun.lock already in sync; nothing to commit."
+            exit 0
+          fi
+          git config user.name "dependabot[bot]"
+          git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+          git add bun.lock
+          git commit -m "chore(deps): sync bun.lock"
+          git push origin "HEAD:$HEAD_REF"
