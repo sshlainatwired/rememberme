@@ -158,4 +158,50 @@ describe("auth flow", () => {
 		});
 		expect(res.status).toBe(401);
 	});
+
+	test("raw better-auth sign-up is closed once the first user exists", async () => {
+		// The shared context already has the owner from the setup test above.
+		const res = await api("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ email: "intruder@example.com", password: "attacker-pass-123" }),
+		});
+		expect(res.status).toBe(404);
+		// No session cookie is minted for the would-be intruder.
+		expect(res.headers.get("set-cookie")).toBeNull();
+
+		// And they cannot log in: no such account exists.
+		const intruderLogin = await api("/api/auth/sign-in/email", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ email: "intruder@example.com", password: "attacker-pass-123" }),
+		});
+		expect(intruderLogin.status).not.toBe(200);
+	});
+});
+
+describe("raw better-auth sign-up gate (fresh database)", () => {
+	let fresh: TestContext;
+
+	beforeAll(async () => {
+		fresh = await makeTestContext();
+	});
+
+	test("sign-up still works before the first user exists", async () => {
+		const res = await fresh.app.request("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ name: "First", email: "first@example.com", password: "first-pass-123" }),
+		});
+		expect(res.status).toBe(200);
+	});
+
+	test("sign-up is rejected after the first user exists", async () => {
+		const res = await fresh.app.request("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ name: "Second", email: "second@example.com", password: "second-pass-123" }),
+		});
+		expect(res.status).toBe(404);
+	});
 });
