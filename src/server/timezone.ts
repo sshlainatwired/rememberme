@@ -16,5 +16,3 @@ export function formatDay(date: string, timezone: string): string {
 	if (!dt.isValid) return date;
 	return dt.toFormat("cccc · LLLL d, yyyy");
 }
-
-/** "August 3 — August 9" style range for a Monday..Sunday week. */
