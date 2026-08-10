@@ -1,0 +1,50 @@
+# RememberMe — example stack for Portainer.
+#
+# Uses the prebuilt GHCR image (no build step needed on the Portainer node).
+#
+# How to deploy:
+#   1. Portainer → Stacks → + Add stack → Web editor
+#   2. Paste this file, name the stack, and click Deploy
+#   3. Set the two required secrets. Either replace ${...} placeholders below
+#      or add them in the stack's "Environment variables" panel:
+#        BETTER_AUTH_SECRET     → openssl rand -base64 32
+#        JOURNAL_ENCRYPTION_KEY → openssl rand -base64 32
+#        BETTER_AUTH_URL        → your public URL, e.g. https://journal.example.com
+#                                 (must be https for Secure session cookies; when
+#                                  left unset it defaults to http://localhost:4321)
+#   4. Open http://<host>:4321 and complete first-run setup. The sign-up route
+#      is closed the moment the first account exists.
+#
+# Optional: set SMTP_* to enable the weekly email digest (omit to disable).
+
+services:
+  rememberme:
+    image: ghcr.io/sshlainatwired/rememberme:latest
+    container_name: rememberme
+    restart: unless-stopped
+    ports:
+      - "4321:4321"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4321
+      DATABASE_URL: file:/app/data/rememberme.db
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:4321}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (openssl rand -base64 32)}"
+      JOURNAL_ENCRYPTION_KEY: "${JOURNAL_ENCRYPTION_KEY:?set JOURNAL_ENCRYPTION_KEY (openssl rand -base64 32)}"
+      # Weekly digest email — omit all SMTP_* to disable digest delivery.
+      # SMTP_HOST: "${SMTP_HOST:-}"
+      # SMTP_PORT: "${SMTP_PORT:-587}"
+      # SMTP_USER: "${SMTP_USER:-}"
+      # SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      # MAIL_FROM: "${MAIL_FROM:-}"
+    volumes:
+      # SQLite database persistence. Named volume: Docker seeds ownership
+      # (uid 1000, the container user) automatically on first creation.
+      - rememberme-data:/app/data
+    # Migrations run explicitly at startup — schema changes are never
+    # applied silently at runtime.
+    command: ["sh", "-c", "bun run db:migrate && bun run start"]
+
+volumes:
+  rememberme-data:

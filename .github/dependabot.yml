@@ -17,7 +17,8 @@ updates:
         patterns:
           - "*"
 
-  # Pinned actions in .github/workflows (checkout, setup-bun, cache).
+  # Pinned actions in .github/workflows (checkout, setup-bun, cache,
+  # docker/* actions).
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -29,5 +30,20 @@ updates:
       - github-actions
     groups:
       actions-deps:
+        patterns:
+          - "*"
+
+  # Base image in Dockerfile (oven/bun:1-slim).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+      - docker
+    groups:
+      docker-deps:
         patterns:
           - "*"

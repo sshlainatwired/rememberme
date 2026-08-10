@@ -14,6 +14,7 @@ data
 tests
 README.md
 docker-compose.yml
+docker-compose.portainer.yml
 Dockerfile
 .dockerignore
 drizzle/meta/_journal.json.tmp
