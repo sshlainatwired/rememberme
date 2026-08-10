@@ -12,7 +12,7 @@ export type Db = LibSQLDatabase<typeof schema>;
  * opens the file (SQLite returns SQLITE_CANTOPEN otherwise). No-op for
  * remote (Turso) URLs and `:memory:`.
  */
-export function ensureLocalDbDirectory(url: string): void {
+function ensureLocalDbDirectory(url: string): void {
 	if (url.startsWith("file:")) {
 		const path = url.slice("file:".length);
 		if (path && path !== ":memory:") {

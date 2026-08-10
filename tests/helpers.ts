@@ -19,7 +19,7 @@ export const OTHER_KEY_BASE64 = Buffer.from(
 ).toString("base64");
 
 /** Test environment (passes the config schema). */
-export function testConfig(overrides: Record<string, string | undefined> = {}): AppConfig {
+function testConfig(overrides: Record<string, string | undefined> = {}): AppConfig {
 	return validateEnv({
 		NODE_ENV: "test",
 		DATABASE_URL: "file:./data/test.db",
