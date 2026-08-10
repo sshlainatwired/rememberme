@@ -1,0 +1,11 @@
+---
+import { getDb } from "../server/db/client";
+import { getUserCount } from "../server/db/repo";
+
+const session = Astro.locals.session;
+const userCount = await getUserCount(getDb());
+
+if (session) return Astro.redirect("/journal/today");
+if (userCount > 0) return Astro.redirect("/login");
+return Astro.redirect("/setup");
+---

@@ -1,0 +1,73 @@
+---
+import { DateTime } from "luxon";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import JournalEditor from "../../components/journal/JournalEditor";
+import WeekStrip from "../../components/journal/WeekStrip.astro";
+import { journalDateSchema } from "../../shared/schemas/journal";
+import { getDb } from "../../server/db/client";
+import { getEntry, getSettingsByUserId, listEntryDates } from "../../server/db/repo";
+import { getCipher } from "../../server/crypto/journal-encryption";
+import { mondayOfWeek } from "../../server/jobs/weekly-digest";
+import { formatDay } from "../../server/timezone";
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+
+const dateParam = Astro.params.date;
+const parsed = journalDateSchema.safeParse(dateParam);
+if (!parsed.success) return new Response("Not found", { status: 404 });
+const date = parsed.data;
+
+const db = getDb();
+const settings = await getSettingsByUserId(db, session.user.id);
+const timezone = settings?.timezone ?? "UTC";
+
+const day = DateTime.fromISO(date, { zone: timezone });
+if (!day.isValid) return new Response("Not found", { status: 404 });
+
+const row = await getEntry(db, session.user.id, date);
+const content = row
+  ? await (await getCipher()).decrypt({
+      encryptedContent: row.encryptedContent,
+      iv: row.iv,
+      authTag: row.authTag,
+    })
+  : "";
+
+const weekStart = mondayOfWeek(day);
+const weekEnd = weekStart.plus({ days: 6 });
+const weekDates = await listEntryDates(db, session.user.id, {
+  from: weekStart.toFormat("yyyy-MM-dd"),
+  to: weekEnd.toFormat("yyyy-MM-dd"),
+});
+
+const isToday = date === DateTime.now().setZone(timezone).toFormat("yyyy-MM-dd");
+const heading = isToday ? "Today" : formatDay(date, timezone);
+---
+
+<BaseLayout title={`rememberme — ${date}`}>
+  <div class="flex flex-col gap-8">
+    <header class="flex flex-col gap-1">
+      <h1 class="text-2xl font-semibold tracking-tight">{heading}</h1>
+      {!isToday && <p class="text-sm text-muted-foreground">{date}</p>}
+    </header>
+
+    <WeekStrip
+      currentDate={date}
+      weekStart={weekStart.toFormat("yyyy-MM-dd")}
+      entryDates={new Set(weekDates)}
+      timezone={timezone}
+    />
+
+    <JournalEditor client:load date={date} initialContent={content} />
+
+    <footer>
+      <a
+        href="/archive"
+        class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        View archive
+      </a>
+    </footer>
+  </div>
+</BaseLayout>

@@ -1,0 +1,68 @@
+---
+import { DateTime } from "luxon";
+
+interface Props {
+  /** Calendar date of the currently open journal (YYYY-MM-DD). */
+  currentDate: string;
+  /** Monday of the week to show. */
+  weekStart: string;
+  /** Entry dates present this week (YYYY-MM-DD). */
+  entryDates: Set<string>;
+  timezone: string;
+}
+
+const { currentDate, weekStart, entryDates, timezone } = Astro.props;
+
+const start = DateTime.fromISO(weekStart, { zone: timezone });
+const days = Array.from({ length: 7 }, (_, i) => start.plus({ days: i }));
+const weekEnd = start.plus({ days: 6 });
+const rangeLabel =
+  start.month === weekEnd.month && start.year === weekEnd.year
+    ? `${start.toFormat("MMMM d")} — ${weekEnd.toFormat("MMMM d, yyyy")}`
+    : `${start.toFormat("MMMM d")} — ${weekEnd.toFormat("MMMM d, yyyy")}`;
+---
+
+<div class="rounded-xl border bg-card p-4 text-card-foreground">
+  <div class="flex items-baseline justify-between">
+    <h2 class="text-sm font-medium">{rangeLabel}</h2>
+    <a
+      href="/archive"
+      class="text-xs text-muted-foreground hover:text-foreground"
+    >
+      Archive
+    </a>
+  </div>
+  <ol class="mt-3 grid grid-cols-7 gap-1 text-center">
+    {
+      days.map((day) => {
+        const dateStr = day.toFormat("yyyy-MM-dd");
+        const hasEntry = entryDates.has(dateStr);
+        const isCurrent = dateStr === currentDate;
+        return (
+          <li class="weekday-cell">
+            <a
+              href={`/journal/${dateStr}`}
+              class={`flex flex-col items-center gap-1 rounded-md px-1 py-2 transition-colors ${
+                isCurrent
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/60"
+              }`}
+              aria-current={isCurrent ? "page" : undefined}
+            >
+              <span class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {day.toFormat("ccc")}
+              </span>
+              <span
+                class={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${
+                  hasEntry ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {hasEntry ? "✓" : "—"}
+              </span>
+            </a>
+          </li>
+        );
+      })
+    }
+  </ol>
+</div>

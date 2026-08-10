@@ -1,0 +1,12 @@
+---
+import { getDb } from "../../server/db/client";
+import { getSettingsByUserId } from "../../server/db/repo";
+import { todayInTimezone } from "../../server/timezone";
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+
+const settings = await getSettingsByUserId(getDb(), session.user.id);
+const today = todayInTimezone(settings?.timezone ?? "UTC");
+return Astro.redirect(`/journal/${today}`);
+---

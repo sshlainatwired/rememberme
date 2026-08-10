@@ -1,0 +1,39 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+	"files": {
+		"includes": [
+			"src/**",
+			"tests/**",
+			"scripts/**",
+			"drizzle.config.ts",
+			"astro.config.mjs",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/.astro",
+			"!**/*.astro",
+			"!**/*.css"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "off",
+				"noConsole": "off"
+			},
+			"style": {
+				"noParameterAssign": "off"
+			}
+		}
+	},
+	"assist": {
+		"enabled": true
+	}
+}

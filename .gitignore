@@ -1,0 +1,24 @@
+# Pix Agent
+.pi/
+.pi-lens/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+
+# Environment (never commit secrets)
+.env
+.env.local
+
+# Local data (SQLite file when using file: DATABASE_URL)
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store

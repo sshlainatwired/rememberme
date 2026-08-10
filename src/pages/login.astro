@@ -1,0 +1,17 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import LoginForm from "../components/auth/LoginForm";
+
+const session = Astro.locals.session;
+if (session) return Astro.redirect("/journal/today");
+---
+
+<AuthLayout title="Sign in">
+  <div class="flex flex-col gap-8">
+    <header class="flex flex-col gap-2">
+      <h1 class="text-3xl font-semibold tracking-tight">rememberme</h1>
+      <p class="text-sm text-muted-foreground">Write down what happened today.</p>
+    </header>
+    <LoginForm client:load />
+  </div>
+</AuthLayout>

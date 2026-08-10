@@ -1,0 +1,120 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getDb } from "../server/db/client";
+import { listEntryDates } from "../server/db/repo";
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+
+const db = getDb();
+
+const dates = await listEntryDates(db, session.user.id);
+
+// Group dates (YYYY-MM-DD) by month, newest first.
+const months = new Map<string, Set<number>>();
+for (const d of dates) {
+  const [year, month, day] = d.split("-").map(Number);
+  const key = `${year}-${String(month).padStart(2, "0")}`;
+  const days = months.get(key) ?? new Set<number>();
+  days.add(day);
+  months.set(key, days);
+}
+
+const WEEKDAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+interface MonthView {
+  key: string;
+  label: string;
+  entryDays: Set<number>;
+  cells: (number | null)[];
+}
+
+function monthGrid(year: number, month: number) {
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const firstOffset = (first.getUTCDay() + 6) % 7;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return { firstOffset, daysInMonth };
+}
+
+function monthLabel(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const views: MonthView[] = [...months.keys()]
+  .sort()
+  .reverse()
+  .map((key) => {
+    const [year, month] = key.split("-").map(Number);
+    const { firstOffset, daysInMonth } = monthGrid(year, month);
+    const entryDays = months.get(key) ?? new Set<number>();
+    const cells: (number | null)[] = [
+      ...Array.from({ length: firstOffset }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    return { key, label: monthLabel(key), entryDays, cells };
+  });
+---
+
+<BaseLayout title="Archive">
+  <div class="flex flex-col gap-8">
+    <header>
+      <h1 class="text-2xl font-semibold tracking-tight">Archive</h1>
+      <p class="mt-1 text-sm text-muted-foreground">
+        Only dates are shown here. Click a day to open its entry.
+      </p>
+    </header>
+
+    {views.length === 0 && (
+      <p class="text-sm text-muted-foreground">Nothing written yet.</p>
+    )}
+
+    <div class="flex flex-col gap-10">
+      {
+        views.map((view) => (
+          <section class="month-section">
+            <h2 class="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+              {view.label}
+            </h2>
+            <div class="grid grid-cols-7 gap-1 text-center text-xs">
+              {
+                WEEKDAY_HEADERS.map((label) => (
+                  <div class="pb-1 text-[11px] uppercase text-muted-foreground/70">
+                    {label}
+                  </div>
+                ))
+              }
+              {
+                view.cells.map((day, i) => {
+                  if (day === null) {
+                    return <div class="empty-cell" aria-hidden="true" />;
+                  }
+                  const dateStr = `${view.key}-${String(day).padStart(2, "0")}`;
+                  const hasEntry = view.entryDays.has(day);
+                  return (
+                    <a
+                      href={`/journal/${dateStr}`}
+                      class={`flex h-9 flex-col items-center justify-center rounded-md transition-colors hover:bg-accent/60 ${
+                        hasEntry
+                          ? "bg-accent font-medium text-accent-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <span>{day}</span>
+                      <span class="text-[10px] leading-none" aria-hidden="true">
+                        {hasEntry ? "●" : ""}
+                      </span>
+                    </a>
+                  );
+                })
+              }
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

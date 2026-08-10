@@ -1,0 +1,28 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import SetupForm from "../components/auth/SetupForm";
+import { getDb } from "../server/db/client";
+import { getUserCount } from "../server/db/repo";
+
+const session = Astro.locals.session;
+const userCount = await getUserCount(getDb());
+
+if (session) return Astro.redirect("/journal/today");
+if (userCount > 0) return Astro.redirect("/login");
+---
+
+<AuthLayout title="Create your password">
+  <div class="flex flex-col gap-8">
+    <header class="flex flex-col gap-2">
+      <h1 class="text-3xl font-semibold tracking-tight">rememberme</h1>
+      <p class="text-sm text-muted-foreground">
+        A private journal. Yours alone. Create your password to begin.
+      </p>
+    </header>
+    <SetupForm client:load />
+    <p class="text-xs leading-relaxed text-muted-foreground">
+      Your journal is encrypted before it is stored. Remember your password —
+      there is no way to recover it.
+    </p>
+  </div>
+</AuthLayout>

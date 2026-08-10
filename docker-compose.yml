@@ -1,0 +1,22 @@
+services:
+  rememberme:
+    build: .
+    image: rememberme:latest
+    container_name: rememberme
+    restart: unless-stopped
+    ports:
+      - "4321:4321"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4321
+    env_file:
+      - .env
+    volumes:
+      # Persist the local SQLite database across container restarts.
+      # The host directory must be writable by uid 1000 (the container user):
+      #   mkdir -p data && chown -R 1000:1000 data
+      - ./data:/app/data
+    # Migrations run explicitly at startup — schema changes are never
+    # applied silently at runtime.
+    command: ["sh", "-c", "bun run db:migrate && bun run start"]

@@ -1,0 +1,19 @@
+# Keep the build context small and never copy secrets or local data.
+node_modules
+dist
+.astro
+.pi
+.pi-lens
+.env
+.env.local
+.env.*.local
+data
+.git
+*.log
+.DS_Store
+tests
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+drizzle/meta/_journal.json.tmp
