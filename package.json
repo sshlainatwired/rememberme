@@ -46,16 +46,14 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^2.5.7",
-    "@eslint/js": "^10.0.1",
+    "typescript": "^6.0.3",
     "@types/bun": "^1.2.19",
     "@types/luxon": "^3.6.0",
     "@types/node": "^26.1.2",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "drizzle-kit": "^0.31.2",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.38.0"
+    "drizzle-kit": "^0.31.2"
   },
   "overrides": {
     "sharp": "^0.35.3"
