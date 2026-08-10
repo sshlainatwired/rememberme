@@ -1,0 +1,43 @@
+name: dep-audit
+
+# Dependency CVE audit: runs `bun audit` against the npm advisory database for
+# everything in bun.lock and fails on any high/critical advisory. Runs on every
+# push/PR like the rest of CI, plus weekly on a schedule so a newly published
+# advisory against unchanged dependencies still surfaces within a week, and on
+# demand via dispatch.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: dep-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: dependency CVE audit (bun audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # bun-version derived from package.json "packageManager" (bun@x.y.z).
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      - name: run CVE audit (fails on high/critical)
+        shell: bash
+        run: |
+          set -o pipefail
+          bun audit --audit-level=high | tee /tmp/audit-summary.txt
+      - name: publish audit summary
+        if: always()
+        run: |
+          echo "## Dependency CVE audit (bun audit)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/audit-summary.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "audit did not produce a summary" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

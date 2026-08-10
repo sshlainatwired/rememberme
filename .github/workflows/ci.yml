@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Primary gate: lint + typecheck + build on a GitHub-hosted runner. A frozen
+  # lockfile is a hard gate: bun.lock is committed, so a missing or out-of-sync
+  # lockfile must fail the build. `astro build` runs here because app config is
+  # validated lazily (src/server/config.ts), so building needs no runtime
+  # secrets — the compiled server entry is exercised by the typecheck step, and
+  # the full production bundle is checked by the build step.
+  check:
+    name: lint + typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # bun-version derived from package.json "packageManager" (bun@x.y.z).
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # biome check runs the formatter, linter, and assist in one pass.
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run build
+
+  # Unit tests. Each suite builds an in-memory test context (tests/helpers.ts),
+  # so no real runtime secrets are required.
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # bun-version derived from package.json "packageManager" (bun@x.y.z).
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run test
