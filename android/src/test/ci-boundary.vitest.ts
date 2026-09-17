@@ -17,9 +17,13 @@ describe("Phase 9 CI boundary", () => {
 		const packageJson = JSON.parse(readRepo("package.json")) as {
 			packageManager?: string;
 		};
+		const androidPackageJson = JSON.parse(readRepo("android/package.json")) as {
+			packageManager?: string;
+		};
 		const lockfile = readRepo("bun.lock");
 
 		expect(packageJson.packageManager).toBe("bun@1.4.2");
+		expect(androidPackageJson.packageManager).toBe(packageJson.packageManager);
 		expect(lockfile).toMatch(/^\{\n {2}"lockfileVersion": 2,/);
 	});
 
@@ -38,6 +42,8 @@ describe("Phase 9 CI boundary", () => {
 
 		expect(workflow).toContain("actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00");
 		expect(workflow).toContain("java-version: 21");
+		expect(workflow).toContain("actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020");
+		expect(workflow).toContain("node-version: 24");
 		expect(workflow).toContain('"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"');
 		expect(workflow).toContain('sdkmanager" "platforms;android-36" "build-tools;35.0.0"');
 		for (const command of ["lint", "typecheck", "test", "build", "cap:sync"]) {
