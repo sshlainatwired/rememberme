@@ -92,7 +92,7 @@ Ignored / generated artifacts (never committed): `android/android/.gradle/`,
 ### Toolchain / package management
 
 No competing package-manager or build-orchestrator stack: the repo continues
-to use **Bun** (pin `bun@1.3.14`) for the web app and the `android/`
+to use **Bun** (pin `bun@1.4.2`, updated in Phase 9 for lockfile v2) for the web app and the `android/`
 workspace; **no pnpm, yarn, Nx, or Turbo**. `android/package.json` uses
 `bun run` scripts; since Phase 1 (ADR-0002) the root `bun.lock` is the
 single canonical lockfile for both workspaces.

@@ -38,7 +38,7 @@ committed with the safe directions in Sections 5, 6, 7, and 11.
 ## 2. Baseline (measured Phase 0)
 
 Environment: `main` at `/Users/lain/Projects/rememberme`; Bun CLI 1.4.0,
-workspace package-manager pin `bun@1.3.14`.
+workspace package-manager pin `bun@1.4.2` (updated in Phase 9 to match the committed lockfile v2 format).
 
 ### 2a. Command results
 
