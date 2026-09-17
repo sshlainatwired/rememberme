@@ -27,6 +27,21 @@ describe("Phase 9 CI boundary", () => {
 		expect(lockfile).toMatch(/^\{\n {2}"lockfileVersion": 2,/);
 	});
 
+	it("uses exact Capacitor versions and omits retired UI tooling", () => {
+		const packageJson = JSON.parse(readRepo("android/package.json")) as {
+			dependencies: Record<string, string>;
+			devDependencies: Record<string, string>;
+		};
+
+		expect(packageJson.dependencies["@capacitor/android"]).toBe("8.5.1");
+		expect(packageJson.dependencies["@capacitor/core"]).toBe("8.5.1");
+		expect(packageJson.devDependencies["@capacitor/cli"]).toBe("8.5.1");
+		for (const dependency of ["@radix-ui/react-slot", "class-variance-authority", "tailwindcss"]) {
+			expect(packageJson.dependencies).not.toHaveProperty(dependency);
+		}
+		expect(packageJson.devDependencies).not.toHaveProperty("@tailwindcss/vite");
+	});
+
 	it("keeps the existing web gates and adds an isolated Android gate", () => {
 		const workflow = readRepo(".github/workflows/ci.yml");
 

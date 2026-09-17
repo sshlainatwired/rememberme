@@ -23,24 +23,20 @@
 	},
 	"dependencies": {
 		"@capacitor-community/sqlite": "8.1.1",
-		"@capacitor/android": "^8.5.1",
-		"@capacitor/core": "^8.5.1",
+		"@capacitor/android": "8.5.1",
+		"@capacitor/core": "8.5.1",
 		"@noble/hashes": "2.4.0",
-		"@radix-ui/react-slot": "^1.2.3",
 		"@rememberme/core": "workspace:*",
-		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"lucide-react": "^1.28.0",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"react-router-dom": "^7.18.3",
-		"tailwind-merge": "^3.3.0",
-		"tailwindcss": "^4.1.11"
+		"tailwind-merge": "^3.3.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.7",
-		"@capacitor/cli": "^8.5.1",
-		"@tailwindcss/vite": "^4.1.11",
+		"@capacitor/cli": "8.5.1",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/react": "^16.3.0",
 		"@types/react": "^19.1.8",
