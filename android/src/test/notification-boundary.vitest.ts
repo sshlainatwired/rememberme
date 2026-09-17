@@ -623,10 +623,10 @@ describe("Phase 6 Task 9 notification boundary", () => {
 			}),
 		);
 		expect(sha256(`${dependencyFields}\n`)).toBe(
-			"b93b3b3ce69718d69c993106987cf55ec0baf09d21a27913137c7c1cf3bd7bd5",
+			"2e579fba5ab2f266962a4f18ca5db56062067b90fb2da508c54013117526a6a8",
 		);
 		expect(sha256(readAllowed("bun.lock"))).toBe(
-			"1855bc3470a2eca4b4fe0985f13747256278631f3ccab9411279fe893086fddc",
+			"cd0d4a1deaef40a7139d630f02d5f2e8e6a20086fdcc974fe7c0d601bb349ade",
 		);
 	});
 });
