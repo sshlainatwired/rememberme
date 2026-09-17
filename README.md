@@ -24,7 +24,7 @@ own hardware, with journal content encrypted before it ever touches disk.
 | --- | --- |
 | Runtime | [Bun](https://bun.sh) |
 | Language | TypeScript (strict, no `any`) |
-| Framework | [Astro](https://astro.build) 5 (SSR) + React islands |
+| Framework | [Astro](https://astro.build) 7 (SSR) + React islands |
 | API | [Hono](https://hono.dev) |
 | Auth | [Better Auth](https://better-auth.com) (email + password only) |
 | ORM / DB | [Drizzle](https://orm.drizzle.team) + libSQL (SQLite / Turso) |
@@ -91,6 +91,40 @@ The container runs migrations on startup, then starts the app on
 `http://localhost:4321`. The SQLite database lives in `./data/` on the host —
 back it up (with your key!) and you can move installations freely.
 
+## Android app
+
+The `android/` workspace is a separate, fully offline Vite + React + Capacitor
+app. It stores the journal in an on-device SQLCipher database, shows a local
+Monday–Sunday Weekly Review, and schedules best-effort local reminders without
+network access. Encrypted `.rmbak` files provide portable backup and restore;
+legacy web exports can be imported offline.
+
+Build prerequisites are **OpenJDK 21**, **Android SDK 36**, and Android SDK
+Build Tools 35.0.0. From the repository root:
+
+```bash
+bun install --frozen-lockfile
+bun run --cwd android lint
+bun run --cwd android typecheck
+bun run --cwd android test
+bun run --cwd android build
+bun run --cwd android cap:sync  # verifies the legacy WebView contract first
+cd android/android
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+```
+
+The debug APK is written to
+`android/android/app/build/outputs/apk/debug/app-debug.apk`. The SQLCipher
+passphrase remains native: it is stored in encrypted preferences and never
+crosses the Capacitor bridge. Optional protection requires a strong biometric
+or device credential before native code can read that passphrase. It is local
+to one Android installation and is intentionally absent from `.rmbak` files.
+
+No emulator/device result is claimed for system prompts, Keystore invalidation,
+API/OEM behavior, visuals, or assistive technology. CI and host-JVM tests do
+not replace those device-lab checks.
+
 ## Common commands
 
 ```bash
@@ -101,14 +135,14 @@ bun run db:generate  # generate a new Drizzle migration after schema changes
 bun run db:migrate   # apply migrations (runs automatically in Docker)
 bun run typecheck    # astro check + tsc --noEmit
 bun run lint         # biome check
-bun test             # 52 tests: crypto, auth, journal, digest, zod
+bun test             # 169 tests: 65 web + 104 shared-core (@rememberme/core)
 ```
 
 ## How it works
 
 ### Request pipeline
 
-Astro 5 SSR (`@astrojs/node`, standalone) is the single server. A small
+Astro 7 SSR (`@astrojs/node`, standalone) is the single server. A small
 middleware:
 
 - routes every `/api/*` request to the Hono app (Better Auth's own routes are
@@ -214,7 +248,8 @@ tests/                   # bun test suite
 
 ## Tests
 
-`bun test` — 52 tests across 5 files:
+`bun test` — 169 tests: 65 web + 104 shared-core
+(`@rememberme/core`, also runnable on its own via `bun run core:test`):
 
 - `encryption` — round-trip, unique IVs, tamper detection (ciphertext, tag,
   IV), wrong-key failure, large/empty/unicode content, invalid key rejection.
@@ -226,6 +261,9 @@ tests/                   # bun test suite
   sessions.
 - `digest` — week math, timezone/hour gating, idempotency, manual mode,
   HTML escaping, no-mailer 503.
+- `core` — `packages/rememberme-core` (5 files, 104 tests): civil calendar
+  math incl. the 0000..9999 representable-range boundaries, journal schemas,
+  timezone primitives, weekly digest model.
 
 ## License
 
