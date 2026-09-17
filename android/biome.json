@@ -1,0 +1,37 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
+	"files": {
+		"includes": [
+			"src/**",
+			"vite.config.ts",
+			"vitest.config.ts",
+			"capacitor.config.ts",
+			"package.json",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/*.css"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noExplicitAny": "off",
+				"noConsole": "off"
+			},
+			"style": {
+				"noParameterAssign": "off"
+			}
+		}
+	},
+	"assist": {
+		"enabled": true
+	}
+}
