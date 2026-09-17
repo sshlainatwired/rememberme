@@ -17,7 +17,8 @@ All ten phases are implemented and closed.
 ## 1. Goal
 
 Add an **offline static Vite + React + Capacitor** Android app to the existing
-`rememberme` repository. The existing **Astro web app stays unchanged**.
+`rememberme` repository. The existing **Astro web app keeps its UI and product
+behavior**; only the plan-sanctioned shared-core seams and their callers change.
 
 The Android app **MUST** include, as non-optional scope:
 
