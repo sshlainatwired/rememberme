@@ -22,3 +22,19 @@ npm-debug.log*
 
 # OS
 .DS_Store
+
+# Android (Capacitor) — generated artifacts & secrets (enforced Phase 0)
+# Precise patterns only; committed android/android native source is NOT ignored.
+android/node_modules/
+android/dist/
+android/coverage/
+android/android/.gradle/
+android/android/**/build/
+android/android/local.properties
+android/android/capacitor-cordova-android-plugins/
+
+# Android signing secrets — never commit
+*.jks
+*.keystore
+keystore.properties
+signing.properties
