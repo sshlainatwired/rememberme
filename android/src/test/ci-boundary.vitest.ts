@@ -38,7 +38,8 @@ describe("Phase 9 CI boundary", () => {
 
 		expect(workflow).toContain("actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00");
 		expect(workflow).toContain("java-version: 21");
-		expect(workflow).toContain('sdkmanager "platforms;android-36" "build-tools;35.0.0"');
+		expect(workflow).toContain('"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"');
+		expect(workflow).toContain('sdkmanager" "platforms;android-36" "build-tools;35.0.0"');
 		for (const command of ["lint", "typecheck", "test", "build", "cap:sync"]) {
 			expect(workflow).toContain(`bun run --cwd android ${command}`);
 		}
@@ -61,6 +62,7 @@ describe("Phase 9 CI boundary", () => {
 	it("keeps minimum permissions and repository-wide SAST coverage", () => {
 		const ci = readRepo(".github/workflows/ci.yml");
 		const semgrep = readRepo(".github/workflows/semgrep.yml");
+		const manifest = readRepo("android/android/app/src/main/AndroidManifest.xml");
 
 		expect(ci).toContain("permissions:\n  contents: read");
 		expect(ci.match(/persist-credentials: false/g)).toHaveLength(3);
@@ -68,6 +70,10 @@ describe("Phase 9 CI boundary", () => {
 		expect(semgrep).toContain("Android");
 		expect(semgrep).not.toContain("git fetch");
 		expect(semgrep).not.toMatch(/--exclude(?:=|\s+)android(?:\/|\s|$)/);
+		expect(manifest).toContain(
+			"nosemgrep: java.android.security.exported_activity.exported_activity",
+		);
+		expect(manifest).toContain("MAIN/LAUNCHER entry point");
 	});
 
 	it("documents the reproducible Android build and its honest verification boundary", () => {

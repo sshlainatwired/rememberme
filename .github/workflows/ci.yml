@@ -86,7 +86,7 @@ jobs:
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - name: install Android SDK 36
-        run: yes | sdkmanager "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;35.0.0" "platform-tools"
       - run: bun run --cwd android lint
       - run: bun run --cwd android typecheck
       - run: bun run --cwd android test
