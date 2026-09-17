@@ -13,6 +13,16 @@ function readRepo(path: string): string {
 }
 
 describe("Phase 9 CI boundary", () => {
+	it("pins the Bun toolchain that owns the committed lockfile format", () => {
+		const packageJson = JSON.parse(readRepo("package.json")) as {
+			packageManager?: string;
+		};
+		const lockfile = readRepo("bun.lock");
+
+		expect(packageJson.packageManager).toBe("bun@1.4.2");
+		expect(lockfile).toMatch(/^\{\n {2}"lockfileVersion": 2,/);
+	});
+
 	it("keeps the existing web gates and adds an isolated Android gate", () => {
 		const workflow = readRepo(".github/workflows/ci.yml");
 
