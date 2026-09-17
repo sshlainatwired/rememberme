@@ -12,13 +12,13 @@ const config: CapacitorConfig = {
 	},
 	plugins: {
 		CapacitorSQLite: {
-			// Phase 4: SQLCipher encrypts the whole on-device database. The
-			// random passphrase is generated once in JS and stored in Android
-			// EncryptedSharedPreferences (Keystore MasterKey); the plugin reads
-			// `androidIsEncryption` to reject a plaintext open of that database.
+			// SQLCipher encrypts the whole on-device database. The random
+			// passphrase is generated and stored entirely in native code; it never
+			// crosses the Capacitor bridge. `androidIsEncryption` rejects plaintext
+			// opens of that database.
 			androidIsEncryption: true,
-			// Biometric/device-credential gating is Phase 8; explicitly false
-			// now so no prompt can appear during Phase 4/5 startup.
+			// Keep the plugin's obsolete constructor prompt disabled. Phase 8 uses
+			// the native key-protection bridge for optional device authentication.
 			androidBiometric: {
 				biometricAuth: false,
 			},
