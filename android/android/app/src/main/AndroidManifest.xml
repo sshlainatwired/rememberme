@@ -11,6 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- nosemgrep: java.android.security.exported_activity.exported_activity -- MAIN/LAUNCHER entry point must be exported; app auth gates all journal routes. -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
