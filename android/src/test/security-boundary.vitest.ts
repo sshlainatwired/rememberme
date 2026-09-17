@@ -332,5 +332,7 @@ describe("Phase 8 closed security boundary", () => {
 		const config = await source("android/capacitor.config.ts");
 		expect(config).toContain("androidIsEncryption: true");
 		expect(config).toContain("biometricAuth: false");
+		expect(config).toContain("generated and stored entirely in native code");
+		expect(config).not.toContain("generated once in JS");
 	});
 });
