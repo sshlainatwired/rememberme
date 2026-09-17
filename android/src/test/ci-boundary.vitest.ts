@@ -77,9 +77,8 @@ describe("Phase 9 CI boundary", () => {
 		expect(semgrep).not.toContain("git fetch");
 		expect(semgrep).not.toMatch(/--exclude(?:=|\s+)android(?:\/|\s|$)/);
 		expect(manifest).toContain(
-			"nosemgrep: java.android.security.exported_activity.exported_activity",
+			"nosemgrep: java.android.security.exported_activity.exported_activity MAIN/LAUNCHER entry point",
 		);
-		expect(manifest).toContain("MAIN/LAUNCHER entry point");
 	});
 
 	it("documents the reproducible Android build and its honest verification boundary", () => {
