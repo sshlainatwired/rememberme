@@ -35,7 +35,7 @@ describe("journal schemas", () => {
 		}
 	});
 
-	test("content is a trimmed string up to 100k chars", () => {
+	test("content is an untrimmed string up to 100k chars", () => {
 		expect(journalContentSchema.safeParse("hello").success).toBe(true);
 		expect(journalContentSchema.safeParse("").success).toBe(true);
 		expect(journalContentSchema.safeParse("a".repeat(100_000)).success).toBe(true);

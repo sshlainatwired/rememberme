@@ -1,14 +1,16 @@
+import { timezoneSchema } from "@rememberme/core";
 import { z } from "zod";
 
-/** IANA timezone names supported by the runtime (e.g. "Europe/Istanbul"). */
-const supportedTimeZones = new Set(Intl.supportedValuesOf("timeZone"));
-
-export const timezoneSchema = z
-	.string()
-	.min(1)
-	.refine((tz) => supportedTimeZones.has(tz), {
-		message: "Invalid IANA timezone",
-	});
+/**
+ * Web settings schema.
+ *
+ * Phase 2 split: the lower-level timezone validation primitive now lives in
+ * the shared `@rememberme/core` package (`timezoneSchema`), consumed and
+ * re-exported here unchanged. The web-only settings fields (digest email,
+ * digest hour, digest enabled) stay in this module; the Android app builds
+ * its own settings schema on the same shared primitive without these fields.
+ */
+export { timezoneSchema };
 
 export const digestHourSchema = z.number().int().min(0).max(23);
 
