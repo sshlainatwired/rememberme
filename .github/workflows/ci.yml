@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # bun-version derived from package.json "packageManager" (bun@x.y.z).
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -46,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # bun-version derived from package.json "packageManager" (bun@x.y.z).
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -56,3 +60,52 @@ jobs:
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run test
+
+  # Independent Android gate. It verifies the static WebView bundle before
+  # Capacitor copies it, runs both host-JVM suites, and assembles installable
+  # debug plus unsigned release APKs without access to deployment credentials.
+  android:
+    name: Android checks + APK assembly
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: install Android SDK 36
+        run: yes | sdkmanager "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+      - run: bun run --cwd android lint
+      - run: bun run --cwd android typecheck
+      - run: bun run --cwd android test
+      - run: bun run --cwd android build
+      - run: bun run --cwd android cap:sync
+      - name: verify tracked Capacitor files are fresh
+        run: |
+          git diff --exit-code -- \
+            android/android/capacitor.settings.gradle \
+            android/android/app/capacitor.build.gradle
+      - name: run native tests and assemble APKs
+        working-directory: android/android
+        run: ./gradlew testDebugUnitTest assembleDebug assembleRelease
+      - name: retain APKs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: rememberme-android-apks
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            android/android/app/build/outputs/apk/debug/app-debug.apk
+            android/android/app/build/outputs/apk/release/app-release-unsigned.apk

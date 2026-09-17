@@ -17,18 +17,19 @@ permissions:
   contents: read
 
 jobs:
-  # Static analysis for command-injection / SSRF / XSS / secret patterns across
-  # the Hono API and the Astro frontend. Source-level SAST only; npm + GitHub
-  # action dependency CVEs are covered by Dependabot (.github/dependabot.yml)
-  # and dep-audit.yml.
+  # Repository-wide static analysis for command-injection / SSRF / XSS /
+  # secret patterns across the Hono API, Astro frontend, and Android TypeScript
+  # and Java sources. Source-level SAST only; npm + GitHub action dependency
+  # CVEs are covered by Dependabot and dep-audit.yml.
   semgrep:
     name: semgrep scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Need the base branch too so the PR gate can diff against it.
+          # Full history supplies origin/$BASE_REF for the PR merge-base scan.
           fetch-depth: 0
+          persist-credentials: false
       # GitHub-hosted runners ship python3 + venv; install semgrep into an
       # isolated venv under $RUNNER_TEMP rather than touching the base image.
       - name: install semgrep
@@ -48,11 +49,8 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          # Fetch the base ref with full history (no --depth): semgrep diffs the
-          # PR against the merge base, which doesn't exist if base is shallow
-          # ("fatal: no merge base found"). checkout already used fetch-depth: 0,
-          # so this just ensures origin/$BASE_REF is present and unshallowed.
-          git fetch --no-tags origin "$BASE_REF"
+          # checkout's fetch-depth: 0 provides origin/$BASE_REF without leaving
+          # a repository credential behind for the downloaded scanner process.
           semgrep scan --config p/default --error \
             --baseline-commit "$(git rev-parse "origin/$BASE_REF")"
       - # Full audit scan on main / nightly: surface the entire backlog in the
