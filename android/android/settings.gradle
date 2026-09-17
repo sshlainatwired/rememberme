@@ -1,0 +1,13 @@
+include ':app'
+include ':capacitor-cordova-android-plugins'
+project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
+
+apply from: 'capacitor.settings.gradle'
+
+// App-owned override (Phase 4 crash-recovery fix, ADR-0005): point the
+// :capacitor-community-sqlite include emitted by the generated
+// capacitor.settings.gradle at the vendored module so cap sync's include is
+// superseded by this projectDir without a duplicate include. The generated
+// capacitor.settings.gradle is never edited; this assignment runs after the
+// apply so it wins.
+project(':capacitor-community-sqlite').projectDir = new File('./vendor/capacitor-community-sqlite/android')

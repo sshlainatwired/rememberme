@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RememberMe</string>
+    <string name="title_activity_main">RememberMe</string>
+    <string name="package_name">app.rememberme.journal</string>
+    <string name="custom_url_scheme">app.rememberme.journal</string>
+</resources>
