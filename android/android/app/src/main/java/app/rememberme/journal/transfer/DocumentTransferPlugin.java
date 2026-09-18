@@ -77,12 +77,14 @@ public final class DocumentTransferPlugin extends Plugin {
             String mimeType = call.getString("mimeType");
             String bytesBase64 = call.getString("bytesBase64");
             int maxBytes = call.getInt("maxBytes", -1);
-            byte[] bytes = decode(call, bytesBase64);
-            if (suggestedName == null || mimeType == null || maxBytes < 0 || bytes == null) {
+            if (suggestedName == null
+                    || mimeType == null
+                    || !BoundedDocumentIO.base64MayFit(bytesBase64, maxBytes)) {
                 rejectInvalid(call);
                 return;
             }
-            if (bytes.length > maxBytes) {
+            byte[] bytes = decode(call, bytesBase64);
+            if (bytes == null || bytes.length > maxBytes) {
                 rejectInvalid(call);
                 return;
             }

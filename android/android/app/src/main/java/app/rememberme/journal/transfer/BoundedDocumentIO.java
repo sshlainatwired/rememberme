@@ -36,6 +36,15 @@ final class BoundedDocumentIO {
         return buffer.toByteArray();
     }
 
+    /** Reject encoded input that cannot fit before allocating its decoded byte array. */
+    static boolean base64MayFit(String encoded, int maxBytes) {
+        if (encoded == null || maxBytes < 0) {
+            return false;
+        }
+        long maxEncodedLength = 4L * ((maxBytes + 2L) / 3L);
+        return encoded.length() <= maxEncodedLength;
+    }
+
     /** Write {@code bytes} only when it fits {@code maxBytes}; no partial over-limit write. */
     static void write(OutputStream output, byte[] bytes, int maxBytes) throws IOException {
         if (maxBytes < 0) {

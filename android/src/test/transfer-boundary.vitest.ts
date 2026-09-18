@@ -203,6 +203,12 @@ describe("Phase 7 native document bridge static contract", () => {
 			"BoundedDocumentIO.write(output, bytes, maxBytes)",
 		]);
 		assertContains(io, ["total > maxBytes", "bytes.length > maxBytes", "maxBytes < 0"]);
+		const saveDocument = plugin.slice(
+			plugin.indexOf("public void saveDocument"),
+			plugin.indexOf("@ActivityCallback", plugin.indexOf("public void saveDocument")),
+		);
+		expect(saveDocument).toContain("BoundedDocumentIO.base64MayFit(bytesBase64, maxBytes)");
+		expect(saveDocument.indexOf("base64MayFit")).toBeLessThan(saveDocument.indexOf("decode(call"));
 		expect(plugin).toContain("activeCall = null");
 		expect(plugin).toContain("try (InputStream input");
 		expect(plugin).toContain("try (OutputStream output");
