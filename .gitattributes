@@ -1,0 +1,3 @@
+# Preserve generated/vendor bytes while keeping whitespace checks active elsewhere.
+android/android/gradlew.bat whitespace=cr-at-eol
+android/android/vendor/capacitor-community-sqlite/README.md -whitespace
