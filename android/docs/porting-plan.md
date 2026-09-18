@@ -1,7 +1,7 @@
 # RememberMe — Android Porting Plan (Phase 0)
 
 Status: **Phases 0–9 complete; Android port FINAL COMPLETE / CLOSED**
-Last updated: Phase 9 final closure — Android 744/744, core 104/104, root 169/169, host-JVM JUnit 87/87, debug and unsigned release APKs assembled; canonical matrix retained at `/tmp/rememberme-phase9-final-gates.log`
+Last verified: post-review hardening — Android 746/746, core 104/104, root 169/169, host-JVM JUnit 89/89, debug and unsigned release APKs assembled; the historical Phase 9 closure matrix remains at `/tmp/rememberme-phase9-final-gates.log`
 Owner: RememberMe maintainers / Android port implementer
 
 This plan is also the final closure record. Phase 4 selected the pinned
@@ -456,8 +456,8 @@ store:
   error.
 - **Unversioned-store preflight**: before creating version metadata, reject
   any object already present in `sqlite_master` under an exact app-reserved
-  name (`schema_metadata`, `journal_entries`, or `settings`; including a view,
-  not only a table), without starting a transaction or writing. This
+  name (`schema_metadata`, `journal_entries`, `settings`, or `local_auth`;
+  including a view, not only a table), without starting a transaction or writing. This
   distinguishes a truly fresh store from damaged prior app state.
 - **Prior-version schema validation**: before each pending production
   migration starts, validate the recorded version's expected table shapes.
