@@ -1,7 +1,9 @@
 package app.rememberme.journal.transfer;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,6 +51,19 @@ public class BoundedDocumentIOTest {
     @Test
     public void readNegativeLimitThrows() {
         assertThrows(IOException.class, () -> BoundedDocumentIO.read(new ByteArrayInputStream(new byte[1]), -1));
+    }
+
+    @Test
+    public void base64PreflightAllowsPayloadAtEncodedLimit() {
+        assertTrue(BoundedDocumentIO.base64MayFit("", 0));
+        assertTrue(BoundedDocumentIO.base64MayFit("AAAA", 3));
+    }
+
+    @Test
+    public void base64PreflightRejectsPayloadAboveEncodedLimit() {
+        assertFalse(BoundedDocumentIO.base64MayFit("AAAAA", 3));
+        assertFalse(BoundedDocumentIO.base64MayFit("", -1));
+        assertFalse(BoundedDocumentIO.base64MayFit(null, 3));
     }
 
     @Test
