@@ -5,7 +5,8 @@
   "type": "module",
   "license": "MIT",
   "private": true,
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.2",
+  "workspaces": ["android", "packages/*"],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -14,10 +15,21 @@
     "typecheck": "astro check && tsc --noEmit",
     "lint": "biome check src tests scripts",
     "test": "bun test",
+    "core:lint": "bun run --cwd packages/rememberme-core lint",
+    "core:typecheck": "bun run --cwd packages/rememberme-core typecheck",
+    "core:test": "bun run --cwd packages/rememberme-core test",
+    "core:check": "bun run core:lint && bun run core:typecheck && bun run core:test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run ./scripts/migrate.ts"
+    "db:migrate": "bun run ./scripts/migrate.ts",
+    "android:dev": "bun run --cwd android dev",
+    "android:test": "bun run --cwd android test",
+    "android:build": "bun run --cwd android build",
+    "android:sync": "bun run --cwd android cap:sync",
+    "android:open": "bun run --cwd android cap:open",
+    "journal:export-android": "bun run ./scripts/export-android.ts"
   },
   "dependencies": {
+    "@rememberme/core": "workspace:*",
     "@astrojs/node": "^11.0.3",
     "@astrojs/react": "^6.0.2",
     "@libsql/client": "^0.17.4",

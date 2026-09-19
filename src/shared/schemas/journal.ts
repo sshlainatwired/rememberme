@@ -1,25 +1,17 @@
-import { z } from "zod";
-
-/** Maximum length of a journal entry (characters). */
-const JOURNAL_CONTENT_MAX = 100_000;
-
-/** Calendar date, e.g. "2026-08-10". Validated with Zod's ISO date. */
-export const journalDateSchema = z.iso.date();
-
-/** Journal entry content. Empty strings are allowed (meaning "no entry"). */
-export const journalContentSchema = z.string().max(JOURNAL_CONTENT_MAX);
-
-/** Request body for PUT /api/journal/:date */
-export const journalUpsertSchema = z.object({
-	content: journalContentSchema,
-});
-
-/** Query parameters for GET /api/journal?from=&to= (both optional). */
-export const journalRangeSchema = z
-	.object({
-		from: z.iso.date().optional(),
-		to: z.iso.date().optional(),
-	})
-	.refine((d) => !d.from || !d.to || d.from <= d.to, {
-		message: "from must not be after to",
-	});
+export type { CalendarDate, Week } from "@rememberme/core";
+/**
+ * Journal domain schemas — compatibility wrapper.
+ *
+ * Phase 2 moved the canonical, platform-neutral implementation into the
+ * shared `@rememberme/core` package. This module re-exports it unchanged so
+ * that every existing web import of `shared/schemas/journal` keeps working
+ * with identical behavior. Treat this file as a thin seam; the real logic
+ * lives in `packages/rememberme-core/src/journal.ts`.
+ */
+export {
+	JOURNAL_CONTENT_MAX,
+	journalContentSchema,
+	journalDateSchema,
+	journalRangeSchema,
+	journalUpsertSchema,
+} from "@rememberme/core";

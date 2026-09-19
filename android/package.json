@@ -1,0 +1,52 @@
+{
+	"name": "@rememberme/android",
+	"version": "0.1.0",
+	"description": "RememberMe — offline static Android journal (Vite + React + Capacitor)",
+	"type": "module",
+	"license": "MIT",
+	"private": true,
+	"packageManager": "bun@1.4.2",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build && bun ./scripts/verify-legacy-build.mjs && bun ./scripts/verify-legacy-css.mjs",
+		"build:web": "vite build",
+		"verify:legacy": "bun ./scripts/verify-legacy-build.mjs",
+		"verify:css": "bun ./scripts/verify-legacy-css.mjs",
+		"preview": "vite preview",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"test": "vitest run",
+		"cap:sync": "bun run verify:legacy && bun run verify:css && cap sync android",
+		"cap:open": "cap open android",
+		"android:add": "cap add android",
+		"build:debug": "bun run build && bun run cap:sync && cd android && ./gradlew assembleDebug"
+	},
+	"dependencies": {
+		"@capacitor-community/sqlite": "8.1.1",
+		"@capacitor/android": "8.5.1",
+		"@capacitor/core": "8.5.1",
+		"@noble/hashes": "2.4.0",
+		"@rememberme/core": "workspace:*",
+		"clsx": "^2.1.1",
+		"lucide-react": "^1.28.0",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-router-dom": "^7.18.3",
+		"tailwind-merge": "^3.3.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.7",
+		"@capacitor/cli": "8.5.1",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "^16.3.0",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"@vitejs/plugin-legacy": "8.2.3",
+		"@vitejs/plugin-react": "^5.2.0",
+		"jsdom": "^26.1.0",
+		"terser": "^5.16.0",
+		"typescript": "^6.0.3",
+		"vite": "^8.2.2",
+		"vitest": "^4.1.11"
+	}
+}
