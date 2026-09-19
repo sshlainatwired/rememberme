@@ -20,10 +20,14 @@ describe("Phase 9 CI boundary", () => {
 		const androidPackageJson = JSON.parse(readRepo("android/package.json")) as {
 			packageManager?: string;
 		};
+		const corePackageJson = JSON.parse(readRepo("packages/rememberme-core/package.json")) as {
+			packageManager?: string;
+		};
 		const lockfile = readRepo("bun.lock");
 
 		expect(packageJson.packageManager).toBe("bun@1.4.2");
 		expect(androidPackageJson.packageManager).toBe(packageJson.packageManager);
+		expect(corePackageJson.packageManager).toBe(packageJson.packageManager);
 		expect(lockfile).toMatch(/^\{\n {2}"lockfileVersion": 2,/);
 	});
 
@@ -50,6 +54,7 @@ describe("Phase 9 CI boundary", () => {
 		expect(workflow).toMatch(/^ {2}android:\s*$/m);
 		expect(workflow).toContain("name: Android checks + APK assembly");
 		expect(workflow).toContain("bun install --frozen-lockfile");
+		expect(workflow).toContain("bun run core:check");
 	});
 
 	it("pins the Android toolchain and runs every scoped JavaScript gate", () => {
@@ -67,15 +72,22 @@ describe("Phase 9 CI boundary", () => {
 		expect(workflow).not.toMatch(/run:\s+(?:npx\s+)?cap sync android/);
 	});
 
-	it("checks generated Gradle freshness, host tests, and both unsigned APK variants", () => {
+	it("validates Gradle and retains only the unsigned release APK", () => {
 		const workflow = readRepo(".github/workflows/ci.yml");
+		const wrapper = readRepo("android/android/gradle/wrapper/gradle-wrapper.properties");
 
+		expect(workflow).toContain(
+			"gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a",
+		);
+		expect(wrapper).toContain(
+			"distributionSha256Sum=ed1a8d686605fd7c23bdf62c7fc7add1c5b23b2bbc3721e661934ef4a4911d7c",
+		);
 		expect(workflow).toContain("git diff --exit-code --");
 		expect(workflow).toContain("android/android/capacitor.settings.gradle");
 		expect(workflow).toContain("android/android/app/capacitor.build.gradle");
 		expect(workflow).toContain("./gradlew testDebugUnitTest assembleDebug assembleRelease");
 		expect(workflow).toContain("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02");
-		expect(workflow).toContain("app-debug.apk");
+		expect(workflow).not.toContain("app-debug.apk");
 		expect(workflow).toContain("app-release-unsigned.apk");
 		expect(workflow).not.toMatch(/(?:keystore|storePassword|keyPassword|publish|release create)/i);
 	});
