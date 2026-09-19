@@ -450,6 +450,28 @@ describe("JournalEditor: shared-schema content limit — astral parity and DOM s
 	});
 });
 
+describe("JournalEditor: app lifecycle", () => {
+	it("flushes dirty text when the app backgrounds before debounce", async () => {
+		const svc = await makeService();
+		const upsert = vi.spyOn(svc, "upsert");
+		const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		render(<JournalEditor date="2026-08-10" service={svc} initialContent="" />);
+
+		fireEvent.change(textarea(), { target: { value: "backgrounded" } });
+		expect(upsert).not.toHaveBeenCalled();
+
+		visibility.mockReturnValue("hidden");
+		fireEvent(document, new Event("visibilitychange"));
+		await settle();
+
+		expect(upsert).toHaveBeenCalledTimes(1);
+		expect(upsert).toHaveBeenCalledWith("2026-08-10", "backgrounded");
+		expect(await svc.get("2026-08-10")).toMatchObject({ content: "backgrounded" });
+		await advance(800);
+		expect(upsert).toHaveBeenCalledTimes(1);
+	});
+});
+
 describe("JournalEditor: beforeunload guard", () => {
 	it("registers a beforeunload guard while dirty and removes it once clean", async () => {
 		const svc = await makeService();

@@ -63,6 +63,8 @@ function enforceMax(target: HTMLTextAreaElement, accepted: string) {
  *   catching any rejection, with NO post-unmount setState and no `onSaved`;
  *   only `onFlush` reports the completed flush to the parent (guarded by the
  *   parent's current-week/request generation).
+ * - App backgrounding flushes dirty text immediately through the same
+ *   serialized save path instead of waiting for the debounce timer.
  * - A `beforeunload` guard is registered only while dirty and removed when
  *   the entry becomes clean or the editor unmounts.
  *
@@ -250,6 +252,22 @@ export default function JournalEditor({
 			if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 		};
 	}, [value, loading]);
+
+	// Android may kill the WebView after the app backgrounds without unmounting
+	// React. Persist the latest text as soon as the document becomes hidden,
+	// cancelling the debounce so the serialized save path runs only once.
+	useEffect(() => {
+		const flushWhenHidden = () => {
+			if (document.visibilityState !== "hidden") return;
+			if (saveTimerRef.current) {
+				clearTimeout(saveTimerRef.current);
+				saveTimerRef.current = null;
+			}
+			saveLatestRef.current();
+		};
+		document.addEventListener("visibilitychange", flushWhenHidden);
+		return () => document.removeEventListener("visibilitychange", flushWhenHidden);
+	}, []);
 
 	// Dirty guard for page close: re-evaluated on every value/saveState change,
 	// so a completed save (lastSavedRef catches up) tears the listener down. The
