@@ -260,7 +260,7 @@ export default function DataTransferCard({
 				: "Restore and overwrite conflicts";
 
 	return (
-		<section aria-labelledby="data-transfer-title" className="settings-stack">
+		<div className="settings-stack">
 			<input
 				type="password"
 				id="transfer-password"
@@ -375,6 +375,6 @@ export default function DataTransferCard({
 					Working…
 				</p>
 			)}
-		</section>
+		</div>
 	);
 }

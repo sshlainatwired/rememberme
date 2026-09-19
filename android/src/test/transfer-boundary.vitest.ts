@@ -115,6 +115,7 @@ describe("Phase 7 closed named-input boundary", () => {
 		expect(plugin).not.toContain("READ_EXTERNAL_STORAGE");
 		expect(plugin).not.toContain("WRITE_EXTERNAL_STORAGE");
 		expect(manifest).not.toMatch(/INTERNET|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE/);
+		expect(manifest).not.toMatch(/FileProvider|FILE_PROVIDER_PATHS/);
 		expect(gradle).not.toMatch(/INTERNET|storage|biometric/i);
 	});
 

@@ -87,6 +87,12 @@ function typeValue(element: HTMLElement, value: string): void {
 }
 
 describe("DataTransferCard backup", () => {
+	test("does not introduce an unnamed nested landmark", async () => {
+		const database = await makeDatabase();
+		const { container } = await renderCard(database, fakeDocuments());
+		expect(container.querySelector("section")).toBeNull();
+	});
+
 	test("saves a password-encrypted backup and clears secrets", async () => {
 		const database = await makeDatabase();
 		const save = vi.fn(async (_name: string, _contents: string) => ({ status: "saved" as const }));
