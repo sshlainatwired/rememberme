@@ -39,6 +39,7 @@ jobs:
       # biome check runs the formatter, linter, and assist in one pass.
       - run: bun run lint
       - run: bun run typecheck
+      - run: bun run core:check
       - run: bun run build
 
   # Unit tests. Each suite builds an in-memory test context (tests/helpers.ts),
@@ -62,8 +63,8 @@ jobs:
       - run: bun run test
 
   # Independent Android gate. It verifies the static WebView bundle before
-  # Capacitor copies it, runs both host-JVM suites, and assembles installable
-  # debug plus unsigned release APKs without access to deployment credentials.
+  # Capacitor copies it, runs both host-JVM suites, validates a debug build,
+  # and retains only the unsigned release APK without deployment credentials.
   android:
     name: Android checks + APK assembly
     runs-on: ubuntu-latest
@@ -72,6 +73,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       # Vitest executes through its Node shebang; Node 24 exposes node:sqlite
       # to Vite's built-in resolver for the host SQLite behavior tests.
@@ -105,12 +107,10 @@ jobs:
       - name: run native tests and assemble APKs
         working-directory: android/android
         run: ./gradlew testDebugUnitTest assembleDebug assembleRelease
-      - name: retain APKs
+      - name: retain unsigned release APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: rememberme-android-apks
+          name: rememberme-android-unsigned-release
           if-no-files-found: error
           retention-days: 14
-          path: |
-            android/android/app/build/outputs/apk/debug/app-debug.apk
-            android/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: android/android/app/build/outputs/apk/release/app-release-unsigned.apk
