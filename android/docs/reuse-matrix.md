@@ -4,7 +4,7 @@ Status: **Phases 0–9 complete; Android port FINAL COMPLETE / CLOSED**
 Target: offline static Vite + React + Capacitor Android app
 Baseline: 55 tests green, lint/typecheck/build pass on `main`.
 
-All ten phases are implemented and closed. The current reviewed snapshot passes Android 746/746, core 104/104, root 169/169, host-JVM JUnit 89/89, Gradle compile, debug and unsigned release APK assembly, verified sync, audit, and static closure gates. Optional device authentication moves the unchanged SQLCipher passphrase between native encrypted stores; no key enters JavaScript or backups. The Phase 9 Android CI job is implemented and the user/build documentation is current. Real prompt, Keystore invalidation, API/OEM, visual, assistive-technology, release-signing, and store-delivery gates remain explicitly unclaimed.
+All ten phases are implemented and closed. The current reviewed snapshot passes Android 748/748, core 104/104, root 169/169, host-JVM JUnit 89/89, Gradle compile, debug and unsigned release APK assembly, verified sync, audit, and static closure gates. Optional device authentication moves the unchanged SQLCipher passphrase between native encrypted stores; no key enters JavaScript or backups. The Phase 9 Android CI job is implemented and the user/build documentation is current. Real prompt, Keystore invalidation, API/OEM, visual, assistive-technology, release-signing, and store-delivery gates remain explicitly unclaimed.
 
 Classification legend (identical to `porting-plan.md` §4 — the two docs agree
 on every item):
