@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { RequireAuth } from "@/auth/auth-context";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import AppShell from "@/components/layout/AppShell";
 import Archive from "@/pages/Archive";
 import Journal from "@/pages/Journal";

@@ -9,8 +9,6 @@ import {
 } from "react";
 import { AUTH_OK_MESSAGE, type AuthStatus } from "@/auth/auth-service";
 import { deviceTimezone } from "@/auth/device-timezone";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { SetupForm } from "@/components/auth/SetupForm";
 import { isDeviceUnlockCancelled } from "@/security/device-unlock";
 
 /**
@@ -326,41 +324,4 @@ export function AuthProvider({ children, auth, deviceUnlock = null }: AuthProvid
 /** Access the auth session context (falls back to the default null state). */
 export function useAuth(): AuthContextValue {
 	return useContext(AuthContext);
-}
-
-/**
- * Route gate: renders `children` when authenticated (or off-native), Setup when
- * unconfigured, Login when configured-but-locked, and a loading status while
- * the first status() is still resolving.
- *
- * Security contract: on-native, the gate FAILS CLOSED — the shell (and thus
- * Today/Journal/Archive/Settings) never renders until `status.unlocked` is
- * true. While `auth` is non-null, `status === null` (not yet resolved, OR the
- * initial status() rejected) NEVER falls through to children: it shows a busy
- * `role="status"` loading state or, once the failure is known, an accessible
- * `role="alert"` fail-closed error. `auth === null` is the App-alone seam the
- * brief mandates (pages render as-is, honest non-native state).
- */
-export function RequireAuth({ children }: { children: ReactNode }) {
-	const { status, busy, auth } = useAuth();
-	if (auth === null) return <>{children}</>; // non-native / App-alone: pages render as-is (brief)
-	if (status === null) {
-		// Fail closed: no shell/children until a resolved status says unlocked.
-		if (busy) {
-			return (
-				<div className="loading-text" role="status">
-					Opening your journal…
-				</div>
-			);
-		}
-		// status() rejected (or never produced a status): accessible generic error.
-		return (
-			<div className="error-text" role="alert">
-				Your journal is currently unavailable. Please try again.
-			</div>
-		);
-	}
-	if (!status.configured) return <SetupForm />;
-	if (!status.unlocked) return <LoginForm />;
-	return <>{children}</>;
 }
