@@ -94,7 +94,20 @@ export default function SecurityCard({ security }: { security: SecurityControlle
 			const authoritative = await captured.getStatus();
 			if (isCurrent()) setStatus(authoritative);
 		} catch {
-			if (isCurrent()) setError(true);
+			if (!isCurrent()) return;
+			setError(true);
+			// The native key transition may have succeeded even though the SQLite
+			// mirror write failed. Re-read the native status so the control shows
+			// the authoritative state rather than the stale pre-transition value,
+			// and report the mirror failure separately.
+			try {
+				const authoritative = await captured.getStatus();
+				if (isCurrent()) setStatus(authoritative);
+			} catch {
+				// Native status unreachable: keep the last rendered status; the
+				// failure alert already explains that the transition did not
+				// settle cleanly.
+			}
 		} finally {
 			if (isCurrent()) {
 				busyRef.current = false;
