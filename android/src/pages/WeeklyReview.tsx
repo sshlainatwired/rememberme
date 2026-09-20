@@ -47,8 +47,12 @@ export interface WeeklyReviewProps {
 export default function WeeklyReview({ now }: WeeklyReviewProps) {
 	const storage = useStorage();
 	const { settings, error: settingsError } = useSettings();
-	const wallClockNowRef = useRef<InstantLike>(now ?? new Date());
-	const instant = now ?? wallClockNowRef.current;
+	// Production captures a wall-clock instant and refreshes it when the app
+	// comes back to the foreground or the saved-timezone date changes; a fixed
+	// `now` prop (tests) keeps the instant deterministic.
+	const [nowInstant, setNowInstant] = useState<InstantLike>(now ?? new Date());
+	const lastLocalDateRef = useRef<string | null>(null);
+	const instant = now ?? nowInstant;
 	const [review, setReview] = useState<ReviewState>({ status: "loading" });
 	const mountedRef = useRef(true);
 	const ownerRef = useRef<DatabaseHandle | null>(storage);
@@ -89,6 +93,39 @@ export default function WeeklyReview({ now }: WeeklyReviewProps) {
 	}, []);
 
 	const timezone = settings?.timezone ?? null;
+	// Refresh the effective instant on foreground and at the saved-zone date
+	// boundary. Android commonly keeps the WebView and route component mounted
+	// while backgrounded, so a Sunday notification landing on /weekly must not
+	// keep deriving the week from a Saturday capture.
+	useEffect(() => {
+		if (now !== undefined || timezone === null) return undefined;
+		const localDate = (candidate: InstantLike): string | null => {
+			try {
+				return todayInTimezone(timezone, candidate);
+			} catch {
+				return null;
+			}
+		};
+		lastLocalDateRef.current = localDate(nowInstant);
+		const refreshIfDayChanged = () => {
+			const next = new Date();
+			const local = localDate(next);
+			if (local !== null && local !== lastLocalDateRef.current) {
+				lastLocalDateRef.current = local;
+				setNowInstant(next);
+			}
+		};
+		const onVisibility = () => {
+			if (document.visibilityState === "visible") refreshIfDayChanged();
+		};
+		document.addEventListener("visibilitychange", onVisibility);
+		const boundaryTimer = window.setInterval(refreshIfDayChanged, 60_000);
+		return () => {
+			document.removeEventListener("visibilitychange", onVisibility);
+			window.clearInterval(boundaryTimer);
+		};
+	}, [now, nowInstant, timezone]);
+
 	useEffect(() => {
 		const generation = ++generationRef.current;
 		let cancelled = false;

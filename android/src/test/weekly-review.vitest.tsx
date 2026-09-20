@@ -1,5 +1,5 @@
 import { formatWeekRange, mondayOfWeek, mostRecentSunday, todayInTimezone } from "@rememberme/core";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { HashRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseHandle } from "@/db/bootstrap";
@@ -43,6 +43,7 @@ function SettingsChangeDriver() {
 
 afterEach(() => {
 	cleanup();
+	vi.useRealTimers();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
@@ -226,5 +227,48 @@ describe("WeeklyReview storage-backed week", () => {
 		expect(screen.getByText(/on-device database/i)).toBeInTheDocument();
 		expect(screen.queryByTestId("weekly-entry-2026-08-10")).not.toBeInTheDocument();
 		expect(screen.queryByText("No entry.")).not.toBeInTheDocument();
+	});
+});
+
+describe("WeeklyReview foreground refresh", () => {
+	it("refreshes the effective instant when foregrounded across the saved-zone date boundary", async () => {
+		const handle = await createTestHandle();
+		await handle.settings.update({ timezone: "UTC" });
+		await handle.journal.upsert("2026-08-16", "SATURDAY WEEK");
+		await handle.journal.upsert("2026-08-23", "SUNDAY WEEK");
+		const list = vi.spyOn(handle.journal, "list");
+
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-08-22T15:00:00Z")); // Saturday
+		const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+		render(
+			<HashRouter>
+				<StorageProvider database={handle}>
+					{/* No `now` prop: the production self-refreshing instant path. */}
+					<WeeklyReview />
+				</StorageProvider>
+			</HashRouter>,
+		);
+		for (let i = 0; i < 10; i += 1) {
+			await act(async () => {
+				await Promise.resolve();
+			});
+		}
+		expect(list).toHaveBeenCalledWith("2026-08-10", "2026-08-16");
+		expect(screen.getByTestId("weekly-entry-2026-08-16")).toHaveTextContent("SATURDAY WEEK");
+
+		// The app stays mounted while backgrounded, then foregrounds on Sunday.
+		vi.setSystemTime(new Date("2026-08-23T09:00:00Z")); // Sunday
+		visibility.mockReturnValue("visible");
+		fireEvent(document, new Event("visibilitychange"));
+		for (let i = 0; i < 10; i += 1) {
+			await act(async () => {
+				await Promise.resolve();
+			});
+		}
+
+		expect(list).toHaveBeenLastCalledWith("2026-08-17", "2026-08-23");
+		expect(screen.getByTestId("weekly-entry-2026-08-23")).toHaveTextContent("SUNDAY WEEK");
+		expect(screen.queryByTestId("weekly-entry-2026-08-16")).not.toBeInTheDocument();
 	});
 });
