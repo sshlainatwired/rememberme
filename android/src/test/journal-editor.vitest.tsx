@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import JournalEditor from "@/components/journal/JournalEditor";
 import { JournalService } from "@/db/journal";
 import { applyMigrations } from "@/db/migrations";
-import { createTestDb } from "@/db/test-helper";
+import { createTestBackupCodec } from "@/db/test-codec";
+import { createTestDb, createTestHandle } from "@/db/test-helper";
 
 /** A promise the test opens/rejects by hand, to hold a write genuinely in flight. */
 function makeGate(): {
@@ -469,6 +470,70 @@ describe("JournalEditor: app lifecycle", () => {
 		expect(await svc.get("2026-08-10")).toMatchObject({ content: "backgrounded" });
 		await advance(800);
 		expect(upsert).toHaveBeenCalledTimes(1);
+	});
+
+	it("enqueues the newest value at the storage layer when backgrounded behind an in-flight write", async () => {
+		const db = createTestDb();
+		await applyMigrations(db);
+		// Hold v1 genuinely INSIDE the storage queue slot (the same layer the
+		// production native queue serializes), so the flush's v2 write queues
+		// behind it exactly as it would in the app.
+		const g1 = makeGate();
+		const gatedDb = Object.create(db) as typeof db;
+		const realWithLock = db.withLock.bind(db);
+		let gated = true;
+		function gateWithLock<TStored>(fn: () => Promise<TStored>): Promise<TStored> {
+			if (gated) {
+				gated = false;
+				return realWithLock(() => g1.promise.then(fn));
+			}
+			return realWithLock(fn);
+		}
+		gatedDb.withLock = gateWithLock;
+		const svc = new JournalService(gatedDb);
+		const spy = vi.spyOn(svc, "upsert");
+		const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		render(<JournalEditor date="2026-08-10" service={svc} initialContent="" />);
+
+		fireEvent.change(textarea(), { target: { value: "v1" } });
+		await advance(800); // v1 write is in flight (holds the storage slot, gated)
+		fireEvent.change(textarea(), { target: { value: "v2" } });
+		expect(spy).toHaveBeenCalledTimes(1);
+
+		visibility.mockReturnValue("hidden");
+		fireEvent(document, new Event("visibilitychange"));
+
+		// The lifecycle flush must REGISTER v2 with storage immediately (a real
+		// queued native operation), not merely a JS pending flag that a killed
+		// process can lose before drain() runs.
+		expect(spy).toHaveBeenCalledTimes(2);
+		expect(spy).toHaveBeenNthCalledWith(2, "2026-08-10", "v2");
+
+		// Simulated termination before v1 resolves: v2 was already enqueued at
+		// the storage layer, so when v1 settles the queued v2 write runs.
+		await act(async () => {
+			g1.open();
+		});
+		await settle();
+		expect(await svc.get("2026-08-10")).toMatchObject({ content: "v2" });
+	});
+
+	it("a backup created after a background flush includes the flushed edit", async () => {
+		const codec = createTestBackupCodec();
+		const handle = await createTestHandle(codec);
+		const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		render(<JournalEditor date="2026-08-10" service={handle.journal} initialContent="" />);
+
+		fireEvent.change(textarea(), { target: { value: "backed up" } });
+		visibility.mockReturnValue("hidden");
+		fireEvent(document, new Event("visibilitychange"));
+
+		// The flush is queued at the storage layer; a backup snapshot taken now
+		// is ordered after it, so it must include the flushed edit.
+		const archive = await handle.transfer.createBackup("secret password");
+		const payload = await codec.decrypt(archive, "secret password");
+		const entry = payload.entries.find((e) => e.date === "2026-08-10");
+		expect(entry?.content).toBe("backed up");
 	});
 });
 
