@@ -8,8 +8,11 @@
 FROM oven/bun:1-slim AS builder
 WORKDIR /app
 
-# Install dependencies first for better layer caching.
+# Install dependencies first for better layer caching. Workspace members
+# must be on disk for bun to resolve workspace deps (@rememberme/core);
+# the Android workspace is not needed for the server image.
 COPY package.json bun.lock* ./
+COPY packages ./packages
 RUN bun install --frozen-lockfile
 
 # Build the Astro + Hono application.
