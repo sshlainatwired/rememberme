@@ -1,7 +1,7 @@
 # RememberMe — Android Porting Plan (Phase 0)
 
 Status: **Phases 0–9 complete; Android port FINAL COMPLETE / CLOSED**
-Last verified: post-review hardening — Android 748/748, core 104/104, root 169/169, host-JVM JUnit 89/89, debug and unsigned release APKs assembled; the historical Phase 9 closure matrix remains at `/tmp/rememberme-phase9-final-gates.log`
+Last verified: post-review hardening — Android 752/752, core 104/104, root 169/169, host-JVM JUnit 89/89, debug and unsigned release APKs assembled; the historical Phase 9 closure matrix remains at `/tmp/rememberme-phase9-final-gates.log`
 Owner: RememberMe maintainers / Android port implementer
 
 This plan is also the final closure record. Phase 4 selected the pinned
@@ -132,7 +132,7 @@ Dependabot scope remain intact:
 
 | Workflow | Current Phase 9 state |
 | --- | --- |
-| `.github/workflows/ci.yml` | Existing root lint/typecheck/build and unit-test jobs are unchanged. The Android job uses the frozen root lockfile, JDK 21, SDK 36, scoped lint/typecheck/test/build, verified `cap:sync`, tracked Capacitor-file freshness, host-JVM tests, and debug plus unsigned-release APK assembly; successful APKs are retained as CI artifacts. |
+| `.github/workflows/ci.yml` | Existing root lint/typecheck/build and unit-test jobs are unchanged. The Android job uses the frozen root lockfile, JDK 21, SDK 36, scoped lint/typecheck/test/build, verified `cap:sync`, tracked Capacitor-file freshness, validated Gradle wrapper + checksum-pinned distribution, host-JVM tests, and debug + unsigned-release APK assembly; only the unsigned release APK is retained as a CI artifact. |
 | `.github/workflows/dep-audit.yml` | `bun audit --audit-level=high` covers the canonical root `bun.lock`, including Android workspace dependencies; weekly cron and dispatch remain. |
 | `.github/workflows/dependabot-lockfile.yml` | Root `bun.lock` regeneration already covers Android manifest changes because Android dependencies use the root lockfile (ADR-0002). |
 | `.github/workflows/docker-publish.yml` | Unchanged: publishes only the web Docker image. Android CI artifacts are not published releases. |
@@ -217,8 +217,9 @@ cover Android. Do not imply otherwise:
   `dist` and fails before `cap sync android` if the output fails the legacy
   contract — so only verified output is copied into the native project).
   The Phase 9 Android CI job then checks tracked generated Gradle files, runs
-  host-JVM tests, assembles debug and unsigned release APKs, and retains those
-  APKs as non-published build artifacts. Root web jobs remain separate.
+  host-JVM tests, validates a debug build, assembles debug + unsigned release
+  APKs, and retains only the unsigned release APK as a non-published artifact.
+  Root web jobs remain separate.
 
 ### 3c. Capability split (web vs Android)
 
@@ -380,8 +381,8 @@ the two docs):
 - **Phase 9 — CI + docs (FINAL COMPLETE / CLOSED)**: the independent Android
   CI job runs scoped lint/typecheck/test/build, `cap:sync` freshness through the
   **verified package script**, host-JVM tests, and Gradle
-  `assembleDebug`/`assembleRelease`; it retains exact unsigned APK artifacts
-  without publishing and disables checkout credential persistence. README and
+  `assembleDebug`/`assembleRelease`; it retains only the unsigned release APK
+  artifact without publishing and disables checkout credential persistence. README and
   architecture documentation are current. Final evidence: Android 744/744,
   core 104/104, root 169/169, host-JVM JUnit 87/87, dependency audit, verified
   sync, debug + unsigned-release assembly, diagnostics, and diff checks pass;

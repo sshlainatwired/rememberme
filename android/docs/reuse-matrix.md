@@ -4,7 +4,7 @@ Status: **Phases 0–9 complete; Android port FINAL COMPLETE / CLOSED**
 Target: offline static Vite + React + Capacitor Android app
 Baseline: 55 tests green, lint/typecheck/build pass on `main`.
 
-All ten phases are implemented and closed. The current reviewed snapshot passes Android 748/748, core 104/104, root 169/169, host-JVM JUnit 89/89, Gradle compile, debug and unsigned release APK assembly, verified sync, audit, and static closure gates. Optional device authentication moves the unchanged SQLCipher passphrase between native encrypted stores; no key enters JavaScript or backups. The Phase 9 Android CI job is implemented and the user/build documentation is current. Real prompt, Keystore invalidation, API/OEM, visual, assistive-technology, release-signing, and store-delivery gates remain explicitly unclaimed.
+All ten phases are implemented and closed. The current reviewed snapshot passes Android 752/752, core 104/104, root 169/169, host-JVM JUnit 89/89, Gradle compile, debug and unsigned release APK assembly, verified sync, audit, and static closure gates. Optional device authentication moves the unchanged SQLCipher passphrase between native encrypted stores; no key enters JavaScript or backups. The Phase 9 Android CI job is implemented and the user/build documentation is current. Real prompt, Keystore invalidation, API/OEM, visual, assistive-technology, release-signing, and store-delivery gates remain explicitly unclaimed.
 
 Classification legend (identical to `porting-plan.md` §4 — the two docs agree
 on every item):
@@ -30,7 +30,7 @@ on every item):
 | `packages/rememberme-core/src/{calendar,weekly}.ts` | **SHARE** | Canonical platform-neutral civil-calendar and week/content models imported by both builds. |
 | `src/server/timezone.ts` | **ANDROID-NOT-NEEDED** | Web compatibility seam that delegates to canonical `@rememberme/core` helpers; Android imports core directly. |
 | `lib/utils.ts` | **KEEP** | `cn` remains a small copied utility; Android does not depend on Tailwind-generated styling for its semantic UI contract. |
-| `components/ui/button.tsx` | **ADAPT** | Kept as a React primitive but rewritten to semantic `.btn` classes; no Tailwind v4 output dependency. |
+| `components/ui/button.tsx` | **NOT-PORTED** | Removed as unused: Android uses plain semantic `<button>` elements with `.btn-*` classes; no primitive copy is retained. |
 | `components/ui/card.tsx` | **ADAPT** | Kept as a React primitive but rewritten to semantic `.card` classes. |
 | `components/ui/input.tsx` | **ADAPT** | Phase 5 forms use labeled native `<input>` controls with semantic classes rather than copying the shadcn/Tailwind component. |
 | `components/ui/label.tsx` | **ADAPT** | Phase 5 uses native `<label htmlFor>` associations; the Radix/shadcn label abstraction is not ported. |
