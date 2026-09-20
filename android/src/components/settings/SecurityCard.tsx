@@ -159,7 +159,10 @@ export default function SecurityCard({ security }: { security: SecurityControlle
 			)}
 			{error && (
 				<div role="alert">
-					<p>We couldn't update device unlock. Your current protection was not reset.</p>
+					<p>
+						We couldn't update device unlock. Your data is safe; reload to confirm your current
+						protection state.
+					</p>
 					<button type="button" className="btn btn-secondary" onClick={() => void loadStatus(true)}>
 						Reload security status
 					</button>
