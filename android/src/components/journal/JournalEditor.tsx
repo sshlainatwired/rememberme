@@ -112,6 +112,9 @@ export default function JournalEditor({
 	// drains via writeRef, so neither identity depends on the other.
 	const saveLatestRef = useRef<() => void>(() => {});
 	const writeRef = useRef<(snapshot: string, isFlush: boolean) => void>(() => {});
+	// True while a background flush has enqueued a write at the storage layer;
+	// prevents duplicate flush writes for the same hidden transition.
+	const backgroundFlushRef = useRef(false);
 
 	onSavedRef.current = onSaved;
 	flushCallbackRef.current = onFlush;
@@ -254,20 +257,59 @@ export default function JournalEditor({
 	}, [value, loading]);
 
 	// Android may kill the WebView after the app backgrounds without unmounting
-	// React. Persist the latest text as soon as the document becomes hidden,
-	// cancelling the debounce so the serialized save path runs only once.
+	// React, so the debounce timer may never fire. Persist the newest text the
+	// moment the document becomes hidden. When no save is in flight this is a
+	// normal serialized write; when one IS in flight, the newest snapshot is
+	// enqueued directly through `service.upsert` (a real queued native
+	// operation at the storage layer) instead of a JS pending flag that a
+	// killed process can lose before drain() runs. The storage-layer queue
+	// still orders it after the in-flight write, so the database always ends
+	// with the newest value.
 	useEffect(() => {
-		const flushWhenHidden = () => {
+		const flushOnBackground = () => {
 			if (document.visibilityState !== "hidden") return;
 			if (saveTimerRef.current) {
 				clearTimeout(saveTimerRef.current);
 				saveTimerRef.current = null;
 			}
-			saveLatestRef.current();
+			const current = valueRef.current;
+			if (current === lastSavedRef.current || backgroundFlushRef.current) return;
+			if (retryTimerRef.current) {
+				clearTimeout(retryTimerRef.current);
+				retryTimerRef.current = null;
+			}
+			setSaveState("saving");
+			setError(null);
+			if (inFlightWriteRef.current === null) {
+				void writeRef.current(current, false);
+				return;
+			}
+			backgroundFlushRef.current = true;
+			void service
+				?.upsert(date, current)
+				.then(() => {
+					backgroundFlushRef.current = false;
+					if (cancelledRef.current) return;
+					// Apply the outcome only if no newer value was typed in the
+					// meantime and no later write took over the editor's state.
+					if (inFlightWriteRef.current === null && valueRef.current === current) {
+						lastSavedRef.current = current;
+						setSaveState("saved");
+						onSavedRef.current?.(current);
+					}
+				})
+				.catch(() => {
+					backgroundFlushRef.current = false;
+					if (cancelledRef.current) return;
+					setSaveState("error");
+					setError(RETRY_ERROR);
+					if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+					retryTimerRef.current = setTimeout(() => void saveLatestRef.current(), RETRY_DELAY_MS);
+				});
 		};
-		document.addEventListener("visibilitychange", flushWhenHidden);
-		return () => document.removeEventListener("visibilitychange", flushWhenHidden);
-	}, []);
+		document.addEventListener("visibilitychange", flushOnBackground);
+		return () => document.removeEventListener("visibilitychange", flushOnBackground);
+	}, [date, service]);
 
 	// Dirty guard for page close: re-evaluated on every value/saveState change,
 	// so a completed save (lastSavedRef catches up) tears the listener down. The
