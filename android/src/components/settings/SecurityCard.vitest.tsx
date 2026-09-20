@@ -81,7 +81,28 @@ describe("SecurityCard", () => {
 		expect(alert).toHaveTextContent(/couldn't update device unlock/i);
 		expect(alert).not.toHaveTextContent(raw);
 		fireEvent.click(screen.getByRole("button", { name: /reload security status/i }));
-		await waitFor(() => expect(security.getStatus).toHaveBeenCalledTimes(2));
+		// Calls: initial load, failure-path native readback, then reload.
+		await waitFor(() => expect(security.getStatus).toHaveBeenCalledTimes(3));
+	});
+
+	it("renders native authority after a successful native transition fails to mirror", async () => {
+		// Natively the transition SUCCEEDED (protection disabled); only the
+		// SQLite mirror write failed. The checkbox must show the native state,
+		// not the stale pre-transition value, with the mirror failure reported.
+		const setEnabled = vi.fn(async () => Promise.reject(new Error("mirror write failed")));
+		const getStatus = vi
+			.fn()
+			.mockResolvedValueOnce({ enabled: true, available: true })
+			.mockResolvedValueOnce({ enabled: false, available: true });
+		const security = controller({ getStatus, setEnabled });
+		render(<SecurityCard security={security} />);
+		const toggle = await screen.findByRole("checkbox", { name: /require device unlock/i });
+		expect(toggle).toBeChecked();
+
+		fireEvent.click(toggle);
+		await waitFor(() => expect(getStatus).toHaveBeenCalledTimes(2));
+		expect(toggle).not.toBeChecked();
+		expect(screen.getByRole("alert")).toHaveTextContent(/couldn't update device unlock/i);
 	});
 
 	it("uses the post-transition native reload as authority", async () => {
